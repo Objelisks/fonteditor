@@ -1,0 +1,23 @@
+{
+  "name": "fonteditor",
+  "version": "1.0.0",
+  "description": "Does not edit fonts",
+  "main": "main.js",
+  "dependencies": {
+    "electron-prebuilt": "^0.36.9",
+    "three": "^0.74.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Objelisks/fonteditor"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Objelisks/fonteditor/issues"
+  }
+}
