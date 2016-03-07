@@ -4,8 +4,6 @@ var app = electron.app;
 var ipc = electron.ipcMain;
 var mainWindow = null;
 
-fs.mkdir('output');
-
 app.on('window-all-closed', function() {
   console.log('goodbye');
   app.quit();
