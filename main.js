@@ -2,6 +2,7 @@ const electron = require('electron');
 const fs = require('fs');
 var app = electron.app;
 var ipc = electron.ipcMain;
+var dialog = electron.dialog;
 var mainWindow = null;
 
 app.on('window-all-closed', function() {
@@ -17,6 +18,15 @@ app.on('ready', function() {
   });
 });
 
+
+ipc.on('open-file', function(e) {
+  dialog.showOpenDialog({title: 'grab em file', properties: ['openFile']}, function(filenames) {
+    var filepath = filenames[0];
+    fs.readFile(filepath, 'utf-8', (err, data) => {
+      e.sender.send('opened-file', data);
+    });
+  });
+});
 
 ipc.on('save', function(e, arg) {
   var filename = arg.filename;

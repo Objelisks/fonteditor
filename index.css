@@ -2,3 +2,9 @@ body {
   margin: 0px;
   overflow: hidden;
 }
+
+.button {
+  width: 100px;
+  height: 60px;
+  position: absolute;
+}

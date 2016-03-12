@@ -1,3 +1,5 @@
 module.exports = {
-  zoneMarker: require('./zoneMarker.js')
+  propertyChanger: require('./propertyChanger.js'),
+  zoneMarker: require('./zoneMarker.js'),
+  objectPlacer: require('./objectPlacer.js')
 }

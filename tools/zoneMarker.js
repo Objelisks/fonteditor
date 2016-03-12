@@ -88,7 +88,6 @@ ZoneMarker.leftclick = function(e, scene) {
         y3: place.point.z
       };
       currentState = states.POINT;
-      console.log('point');
       break;
     case states.POINT:
       activeZone.x2 = place.point.x;
@@ -96,13 +95,11 @@ ZoneMarker.leftclick = function(e, scene) {
       activeZone.x3 = place.point.x;
       activeZone.y3 = place.point.z;
       currentState = states.LINE;
-      console.log('line');
       break;
     case states.LINE:
       activeZone.x3 = place.point.x;
       activeZone.y3 = place.point.z;
       currentState = states.IDLE;
-      console.log('done');
       break;
   }
 }
