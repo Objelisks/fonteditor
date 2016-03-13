@@ -29,8 +29,8 @@ ipc.on('open-file', function(e) {
 });
 
 ipc.on('save', function(e, arg) {
-  var filename = arg.filename;
-  fs.writeFile(filename, JSON.stringify(arg), function() {
+  var filename = arg.name || 'chunk-temp.json';
+  fs.writeFile(filename, arg, function() {
     e.sender.send('save-done', filename);
   });
 });

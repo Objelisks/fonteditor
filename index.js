@@ -1,23 +1,19 @@
 const electron = require('electron');
 const tools = require('./tools/tools.js');
+const stringer = require('json-stringify-pretty-compact');
 var ipc = electron.ipcRenderer;
 var remote = electron.remote;
 var Menu = remote.Menu, MenuItem = remote.MenuItem;
 
 var scene, camera, renderer;
-var geometry, material, mesh;
 var groundPlane;
 
 init();
 animate();
 
-var chunk = {
-  terrain: null,
-
-};
+var chunk = require('./chunk.js');
 
 function init() {
-
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
@@ -26,12 +22,6 @@ function init() {
     camera.position.z = 10;
     camera.lookAt(new THREE.Vector3());
     scene.camera = camera;
-
-    geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
-
-    mesh = new THREE.Mesh( geometry, material );
-    scene.add( mesh );
 
     var ambLight = new THREE.AmbientLight(0x808080);
     scene.add(ambLight);
@@ -55,14 +45,26 @@ function init() {
 }
 
 function animate() {
-
     requestAnimationFrame( animate );
-
-    mesh.rotation.x += 0.01;
-    mesh.rotation.y += 0.02;
-
     renderer.render( scene, camera );
+}
 
+var formatTHREE = function(k,v) {
+  if(v.toJSON) return v.toJSON();
+  return v;
+}
+
+var formatJSON = function(chunk) {
+    return JSON.stringify(chunk, formatTHREE);
+  /*
+  var obj = {};
+  obj.name = chunk.name;
+  obj.terrain = chunk.terrain.toJSON();
+  obj.grid = chunk.grid;
+  obj.zones = chunk.zones;
+  obj.objects = chunk.zones;
+  return JSON.stringify(obj, formatTHREE);
+  */
 }
 
 /*
@@ -81,12 +83,13 @@ zone placement
 
 */
 
+var activeTool = 'zoneMarker';
 var rightMouseHeld = false;
 
-tools['zoneMarker'].enabled(true, scene);
+tools[activeTool].enabled(true, scene);
 
 window.addEventListener('mousemove', function(e) {
-  tools['zoneMarker'].mousemove(e, scene);
+  tools[activeTool].mousemove(e, scene);
 
   if(rightMouseHeld) {
     var len = camera.position.length();
@@ -103,8 +106,9 @@ window.addEventListener('wheel', function(e) {
 
 window.addEventListener('mousedown', function(e) {
   if(e.button === 0) {
-    tools['zoneMarker'].leftclick(e, scene);
+    tools[activeTool].leftclick(e, scene);
   } else if(e.button === 2) {
+    tools[activeTool].rightclick(e, scene);
     rightMouseHeld = true;
   }
 });
@@ -116,9 +120,10 @@ window.addEventListener('mouseup', function(e) {
 window.addEventListener('keydown', function(e) {
   if(e.ctrlKey && e.keyCode === 83 && !e.repeat) {
     // ctrl+s pressed
-    ipc.send('save', {filename: 'chunk1'});
+    ipc.send('save', formatJSON(chunk));
   }
 });
+
 
 var menu = Menu.buildFromTemplate([{
   label: 'File',
@@ -127,7 +132,14 @@ var menu = Menu.buildFromTemplate([{
       label: 'Open Terrain json',
       click: function() {
         ipc.send('open-file');
-        console.log('open-file');
+      }
+    },
+    {
+      label: 'Save',
+      click: function() {
+        console.log(chunk);
+        var jsonObject = JSON.stringify(chunk, replacer, 2);
+        ipc.send('save', jsonObject);
       }
     },
     {
@@ -142,16 +154,19 @@ var menu = Menu.buildFromTemplate([{
 }]);
 Menu.setApplicationMenu(menu);
 
+
 var loader = new THREE.JSONLoader();
 
 ipc.on('opened-file', function(e, file) {
-  console.log(file);
   var parsed = loader.parse(JSON.parse(file));
   var convertedMaterials = parsed.materials.map((mat) => {
     var newMat = new THREE.MeshStandardMaterial({color: mat.color, roughness: 1.0, metalness: 0.0});
     newMat.shading = THREE.FlatShading;
     return newMat;
   });
+  if(chunk.terrain) {
+    scene.remove(chunk.terrain);
+  }
   chunk.terrain = new THREE.Mesh(parsed.geometry, new THREE.MultiMaterial(convertedMaterials));
   scene.add(chunk.terrain);
 });

@@ -1,9 +1,10 @@
+var chunk = require('../chunk.js');
 var ZoneMarker = {};
 
 var states = {IDLE:0, POINT:1, LINE:2};
 var currentState = states.IDLE;
 var cursor = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshStandardMaterial({color:0xadfdfa}));
-var activeZone = {x1:0, y1:0, x2:0, y2:0, x3:0, y3:0};
+var activeZone = {x1:0, y1:0, x2:0, y2:0, x3:0, y3:0, active:false};
 var previewBox = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 1), new THREE.MeshStandardMaterial({color: 0x3344cc, transparent: true, opacity: 0.4}));
 previewBox.position.y = 0.1;
 
@@ -25,6 +26,9 @@ var getGroundIntersect = function(e, scene) {
 }
 
 var updatePreview = function() {
+  previewBox.visible = activeZone.active;
+  if(!activeZone.active) { return }
+
   var a = new THREE.Vector2(activeZone.x1, activeZone.y1);
   var b = new THREE.Vector2(activeZone.x2, activeZone.y2);
   var cf = new THREE.Vector2(activeZone.x3, activeZone.y3);
@@ -88,6 +92,7 @@ ZoneMarker.leftclick = function(e, scene) {
         y3: place.point.z
       };
       currentState = states.POINT;
+      activeZone.active = true;
       break;
     case states.POINT:
       activeZone.x2 = place.point.x;
@@ -100,8 +105,18 @@ ZoneMarker.leftclick = function(e, scene) {
       activeZone.x3 = place.point.x;
       activeZone.y3 = place.point.z;
       currentState = states.IDLE;
+      activeZone.active = false;
+
+      var newZone = previewBox.clone();
+      scene.add(newZone);
+      chunk.zones.push(newZone);
       break;
   }
+}
+
+ZoneMarker.rightclick = function(e, scene) {
+  currentState = states.IDLE;
+  activeZone = {x1:0, y1:0, x2:0, y2:0, x3:0, y3:0, active:false};
 }
 
 module.exports = ZoneMarker;
