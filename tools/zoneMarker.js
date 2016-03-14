@@ -1,3 +1,4 @@
+const ipc = require('electron').ipcRenderer;
 var chunk = require('../chunk.js');
 var ZoneMarker = {};
 
@@ -7,6 +8,8 @@ var cursor = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshStandar
 var activeZone = {x1:0, y1:0, x2:0, y2:0, x3:0, y3:0, active:false};
 var previewBox = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 1), new THREE.MeshStandardMaterial({color: 0x3344cc, transparent: true, opacity: 0.4}));
 previewBox.position.y = 0.1;
+var addedZones = [];
+var ui = new dat.GUI();
 
 var distance = function(x1, y1, x2, y2) {
   return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
@@ -18,6 +21,19 @@ var getGroundIntersect = function(e, scene) {
   raycaster.setFromCamera(pos, scene.camera);
 
   var intersects = raycaster.intersectObject(scene.groundPlane);
+  if(intersects.length > 0) {
+    return intersects[0];
+  } else {
+    return null;
+  }
+}
+
+var getObjectIntersect = function(e, scene) {
+  var pos = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * -2 + 1);
+  var raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(pos, scene.camera);
+
+  var intersects = raycaster.intersectObjects(addedZones);
   if(intersects.length > 0) {
     return intersects[0];
   } else {
@@ -47,6 +63,22 @@ var updatePreview = function() {
   previewBox.rotation.y = -angle;
 }
 
+var updateUI = function() {
+  ui.destroy();
+  ui = new dat.GUI();
+  ui.add(selectedZone, 'connection').onFinishChange(function(value) {
+    ipc.send('open-ghost', value);
+  });
+  var posFolder = ui.addFolder('position');
+  posFolder.add(selectedZone.offsetPosition, 'x');
+  posFolder.add(selectedZone.offsetPosition, 'y');
+  posFolder.add(selectedZone.offsetPosition, 'z');
+  var rotFolder = ui.addFolder('rotation');
+  rotFolder.add(selectedZone.offsetRotation, '_x');
+  rotFolder.add(selectedZone.offsetRotation, '_y');
+  rotFolder.add(selectedZone.offsetRotation, '_z');
+}
+
 ZoneMarker.enabled = function(enable, scene) {
   if(enable) {
     scene.add(cursor);
@@ -60,6 +92,7 @@ ZoneMarker.enabled = function(enable, scene) {
 ZoneMarker.mousemove = function(e, scene) {
   var place = getGroundIntersect(e, scene);
   if(place === null) return;
+
   cursor.position.copy(place.point);
   switch(currentState) {
     case states.IDLE:
@@ -79,6 +112,14 @@ ZoneMarker.mousemove = function(e, scene) {
 }
 
 ZoneMarker.leftclick = function(e, scene) {
+  var zone = getObjectIntersect(e, scene);
+  console.log(zone);
+  if(zone !== null) {
+    selectedZone = zone.object.userData;
+    updateUI();
+    return;
+  }
+
   var place = getGroundIntersect(e, scene);
   if(place === null) return;
   switch(currentState) {
@@ -108,8 +149,21 @@ ZoneMarker.leftclick = function(e, scene) {
       activeZone.active = false;
 
       var newZone = previewBox.clone();
+      addedZones.push(newZone);
       scene.add(newZone);
-      chunk.zones.push(newZone);
+      var zoneData = {
+        position: newZone.position,
+        rotation: newZone.rotation,
+        scale: newZone.scale,
+        connection: 'connection',
+        offsetPosition: new THREE.Vector3(),
+        offsetRotation: new THREE.Euler()
+      };
+      Object.defineProperty(zoneData, 'editorZone', {value: newZone});
+      newZone.userData = zoneData;
+      selectedZone = zoneData;
+      updateUI();
+      chunk.zones.push(zoneData);
       break;
   }
 }

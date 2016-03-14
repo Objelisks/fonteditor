@@ -42,6 +42,11 @@ function init() {
 
     document.body.appendChild( renderer.domElement );
 
+    var toolName = document.createElement('div');
+    toolName.classList.add('ui');
+    toolName.innerText = 'zoneMarker';
+    document.body.appendChild(toolName);
+
 }
 
 function animate() {
@@ -49,22 +54,14 @@ function animate() {
     renderer.render( scene, camera );
 }
 
-var formatTHREE = function(k,v) {
-  if(v.toJSON) return v.toJSON();
-  return v;
-}
-
 var formatJSON = function(chunk) {
-    return JSON.stringify(chunk, formatTHREE);
-  /*
   var obj = {};
   obj.name = chunk.name;
   obj.terrain = chunk.terrain.toJSON();
   obj.grid = chunk.grid;
   obj.zones = chunk.zones;
-  obj.objects = chunk.zones;
-  return JSON.stringify(obj, formatTHREE);
-  */
+  obj.objects = chunk.objects;
+  return JSON.stringify(obj, null, 2);
 }
 
 /*
@@ -137,9 +134,7 @@ var menu = Menu.buildFromTemplate([{
     {
       label: 'Save',
       click: function() {
-        console.log(chunk);
-        var jsonObject = JSON.stringify(chunk, replacer, 2);
-        ipc.send('save', jsonObject);
+        ipc.send('save', formatJSON(chunk));
       }
     },
     {
