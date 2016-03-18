@@ -19,17 +19,17 @@ app.on('ready', function() {
 });
 
 
-ipc.on('open-file', function(e) {
+ipc.on('open-file', function(e, type) {
   dialog.showOpenDialog({title: 'grab em file', properties: ['openFile']}, function(filenames) {
     var filepath = filenames[0];
     fs.readFile(filepath, 'utf-8', (err, data) => {
-      e.sender.send('opened-file', data);
+      e.sender.send(type, data);
     });
   });
 });
 
-ipc.on('save', function(e, arg) {
-  var filename = arg.name || 'chunk-temp.json';
+ipc.on('save', function(e, arg, name) {
+  var filename = name || 'chunk-temp.json';
   fs.writeFile(filename, arg, function() {
     e.sender.send('save-done', filename);
   });

@@ -3,5 +3,6 @@ module.exports = {
   terrain: null,
   grid: '',
   zones: [],
+  walls: [],
   objects: []
 };

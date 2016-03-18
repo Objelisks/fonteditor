@@ -2,14 +2,17 @@ const ipc = require('electron').ipcRenderer;
 var chunk = require('../chunk.js');
 var ZoneMarker = {};
 
+var zoneMaterial = new THREE.MeshStandardMaterial({color: 0x3344cc, transparent: true, opacity: 0.4});
+
 var states = {IDLE:0, POINT:1, LINE:2};
 var currentState = states.IDLE;
 var cursor = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshStandardMaterial({color:0xadfdfa}));
 var activeZone = {x1:0, y1:0, x2:0, y2:0, x3:0, y3:0, active:false};
-var previewBox = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 1), new THREE.MeshStandardMaterial({color: 0x3344cc, transparent: true, opacity: 0.4}));
+var previewBox = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 1), zoneMaterial);
 previewBox.position.y = 0.1;
 var addedZones = [];
 var ui = new dat.GUI();
+var selectedZone = null;
 
 var distance = function(x1, y1, x2, y2) {
   return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
@@ -64,28 +67,54 @@ var updatePreview = function() {
 }
 
 var updateUI = function() {
-  ui.destroy();
-  ui = new dat.GUI();
-  ui.add(selectedZone, 'connection').onFinishChange(function(value) {
-    ipc.send('open-ghost', value);
+  if(ui) {
+    ui.destroy();
+    ui = null;
+  }
+  if(selectedZone) {
+    ui = new dat.GUI();
+    ui.add(selectedZone, 'connection').onFinishChange(function(value) {
+      ipc.send('open-ghost', value);
+    });
+    var posFolder = ui.addFolder('position');
+    posFolder.add(selectedZone.offsetPosition, 'x');
+    posFolder.add(selectedZone.offsetPosition, 'y');
+    posFolder.add(selectedZone.offsetPosition, 'z');
+    var rotFolder = ui.addFolder('rotation');
+    rotFolder.add(selectedZone.offsetRotation, '_x');
+    rotFolder.add(selectedZone.offsetRotation, '_y');
+    rotFolder.add(selectedZone.offsetRotation, '_z');
+  }
+}
+
+ZoneMarker.initialize = function(scene) {
+  addedZones.forEach(function(zone) {
+    scene.remove(zone);
   });
-  var posFolder = ui.addFolder('position');
-  posFolder.add(selectedZone.offsetPosition, 'x');
-  posFolder.add(selectedZone.offsetPosition, 'y');
-  posFolder.add(selectedZone.offsetPosition, 'z');
-  var rotFolder = ui.addFolder('rotation');
-  rotFolder.add(selectedZone.offsetRotation, '_x');
-  rotFolder.add(selectedZone.offsetRotation, '_y');
-  rotFolder.add(selectedZone.offsetRotation, '_z');
+  addedZones = [];
+  chunk.zones.forEach(function(zone) {
+    var newZone = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), zoneMaterial);
+    newZone.position.set(zone.position.x, zone.position.y, zone.position.z);
+    newZone.rotation.set(zone.rotation._x, zone.rotation._y, zone.rotation._z);
+    newZone.scale.set(zone.scale.x, zone.scale.y, zone.scale.z);
+    scene.add(newZone);
+    addedZones.push(newZone);
+  });
 }
 
 ZoneMarker.enabled = function(enable, scene) {
   if(enable) {
     scene.add(cursor);
     scene.add(previewBox);
+    updateUI();
+    updatePreview();
   } else {
     scene.remove(cursor);
     scene.remove(previewBox);
+    if(ui) {
+      ui.destroy();
+      ui = null;
+    }
   }
 }
 
@@ -113,7 +142,6 @@ ZoneMarker.mousemove = function(e, scene) {
 
 ZoneMarker.leftclick = function(e, scene) {
   var zone = getObjectIntersect(e, scene);
-  console.log(zone);
   if(zone !== null) {
     selectedZone = zone.object.userData;
     updateUI();
