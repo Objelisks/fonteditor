@@ -97,6 +97,21 @@ ZoneMarker.initialize = function(scene) {
     newZone.position.set(zone.position.x, zone.position.y, zone.position.z);
     newZone.rotation.set(zone.rotation._x, zone.rotation._y, zone.rotation._z);
     newZone.scale.set(zone.scale.x, zone.scale.y, zone.scale.z);
+
+    var zoneData = {
+      position: zone.position,
+      rotation: zone.rotation,
+      scale: zone.scale,
+      connection: zone.connection,
+      offsetPosition: new THREE.Vector3(),
+      offsetRotation: new THREE.Euler()
+    };
+    
+    Object.defineProperty(zoneData, 'editorZone', {value: newZone});
+    newZone.userData = zoneData;
+
+
+
     scene.add(newZone);
     addedZones.push(newZone);
   });
