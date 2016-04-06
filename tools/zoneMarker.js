@@ -76,14 +76,6 @@ var updateUI = function() {
     ui.add(selectedZone, 'connection').onFinishChange(function(value) {
       ipc.send('open-ghost', value);
     });
-    var posFolder = ui.addFolder('position');
-    posFolder.add(selectedZone.offsetPosition, 'x');
-    posFolder.add(selectedZone.offsetPosition, 'y');
-    posFolder.add(selectedZone.offsetPosition, 'z');
-    var rotFolder = ui.addFolder('rotation');
-    rotFolder.add(selectedZone.offsetRotation, '_x');
-    rotFolder.add(selectedZone.offsetRotation, '_y');
-    rotFolder.add(selectedZone.offsetRotation, '_z');
   }
 }
 
@@ -102,11 +94,9 @@ ZoneMarker.initialize = function(scene) {
       position: zone.position,
       rotation: zone.rotation,
       scale: zone.scale,
-      connection: zone.connection,
-      offsetPosition: new THREE.Vector3(),
-      offsetRotation: new THREE.Euler()
+      connection: zone.connection
     };
-    
+
     Object.defineProperty(zoneData, 'editorZone', {value: newZone});
     newZone.userData = zoneData;
 
@@ -191,16 +181,22 @@ ZoneMarker.leftclick = function(e, scene) {
       currentState = states.IDLE;
       activeZone.active = false;
 
+      var a = new THREE.Vector2(activeZone.x1, activeZone.y1);
+      var b = new THREE.Vector2(activeZone.x2, activeZone.y2);
+      var cf = new THREE.Vector2(activeZone.x3, activeZone.y3);
+      var cf = new THREE.Vector2(activeZone.x3, activeZone.y3);
+      var n = new THREE.Vector2(b.y - a.y, -(b.x - a.x)).normalize();
+      var c1 = new THREE.Vector2().subVectors(cf, b).dot(n);
+      var c = n.multiplyScalar(c1).add(b);
+
       var newZone = previewBox.clone();
       addedZones.push(newZone);
       scene.add(newZone);
       var zoneData = {
-        position: newZone.position,
-        rotation: newZone.rotation,
-        scale: newZone.scale,
-        connection: 'connection',
-        offsetPosition: new THREE.Vector3(),
-        offsetRotation: new THREE.Euler()
+        a: {x: a.x, z: a.y },
+        b: {x: b.x, z: b.y },
+        c: {x: c.x, z: c.y },
+        connection: 'connection'
       };
       Object.defineProperty(zoneData, 'editorZone', {value: newZone});
       newZone.userData = zoneData;

@@ -30,7 +30,7 @@ function init() {
     dirLight.position.set(5,10,5);
     scene.add(dirLight);
 
-    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshBasicMaterial());
+    groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshBasicMaterial());
     groundPlane.rotateX(-Math.PI/2);
     groundPlane.updateMatrixWorld(true);
     scene.groundPlane = groundPlane;
@@ -60,7 +60,6 @@ var formatJSON = function(chunk) {
   var obj = {};
   obj.name = chunk.name;
   obj.terrain = chunk.terrain.toJSON();
-  obj.grid = chunk.grid;
   obj.zones = chunk.zones;
   obj.objects = chunk.objects;
   obj.walls = chunk.walls;

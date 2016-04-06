@@ -54,7 +54,7 @@ WallDrawer.initialize = function() {
     newMesh.geometry.rotateX(Math.PI/2);
     scene.add(newMesh);
     addedLines.push(newMesh);
-  }); 
+  });
 }
 
 WallDrawer.enabled = function(enable, scene) {
@@ -73,7 +73,7 @@ WallDrawer.mousemove = function(e, scene) {
 WallDrawer.leftclick = function(e, scene) {
   var intersect = getGroundIntersect(e, scene);
   var point = intersect.point;
-  if(selectedLine == null) {
+  if(selectedLine === null) {
     selectedLine = [point];
   } else {
     selectedLine.push(point);
@@ -87,7 +87,7 @@ WallDrawer.keydown = function(e, scene) {
     chunk.walls.push(selectedLine);
     selectedLine = null;
     addedLines.push(lineMesh);
-  
+
     lineMesh = new THREE.Line(new THREE.BoxGeometry(), new THREE.LineBasicMaterial({color: 0xffffff}));
     lineMesh.position.y = 0.5;
     scene.remove(lineMesh);

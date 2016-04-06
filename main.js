@@ -29,7 +29,7 @@ ipc.on('open-file', function(e, type) {
 });
 
 ipc.on('save', function(e, arg, name) {
-  var filename = name || 'chunk-temp.json';
+  var filename = (name + '.json') || 'chunk-temp.json';
   fs.writeFile(filename, arg, function() {
     e.sender.send('save-done', filename);
   });
